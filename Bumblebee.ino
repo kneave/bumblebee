@@ -1,12 +1,27 @@
+#include <Wire.h>
 #include <Adafruit_MotorShield.h>
+#include "utility/Adafruit_MS_PWMServoDriver.h"
 
-int max_command_length = 30;
-char* inc_command = new char[max_command_length + 1];
+Adafruit_MotorShield AFMS = Adafruit_MotorShield();
+
+Adafruit_DCMotor *motorLeft = AFMS.getMotor(1);
+Adafruit_DCMotor *motorRight = AFMS.getMotor(2);
+
+int sweeperPin = 5;
+int blowerPin = 6;
+
+//  Note: Commented out as my motor controller is trashed
+//Adafruit_DCMotor *motorBrush = AFMS.getMotor(3);
+//Adafruit_DCMotor *motorSweeperBlower = AFMS.getMotor(4);
 
 void setup()
 {
+	
 	//  Need to setup serial
-	Serial.begin(9600);
+	Serial.begin(115200);
+
+	pinMode(sweeperPin, OUTPUT);
+	pinMode(blowerPin, OUTPUT);
 
 	while (!Serial) {
 		; //  Wait for serial to initialise
@@ -16,13 +31,15 @@ void setup()
 
 		Serial.println("Serial connected!");
 	}
+
+	AFMS.begin();
 }
 
 void loop()
 {
-	int leftMotor, rightMotor, sweeper, blower;
-	leftMotor = rightMotor = sweeper = blower = 0;
-
+	int leftMotorSpeed, rightMotorSpeed, sweeperSpeed, blowerSpeed;
+	leftMotorSpeed = rightMotorSpeed = sweeperSpeed = blowerSpeed = 0;
+	
 	// listen for commands on the serial port
 	bool gotData = false;
 
@@ -40,32 +57,43 @@ void loop()
 		switch (inc)
 		{
 		case 'L':
-			leftMotor = GetMotorValue();
+			leftMotorSpeed = GetMotorValue();
 			break;
 		case 'R':
-			rightMotor = GetMotorValue();
+			rightMotorSpeed = GetMotorValue();
 			break;
 		case 'W':
-			sweeper = GetMotorValue();
+			sweeperSpeed = GetMotorValue();
 			break;
 		case 'B':
-			blower = GetMotorValue();
+			blowerSpeed = GetMotorValue();
 			break;
 		}
-
-		// if no command for a while, milliseconds, then stop all actions
-		// some are bool, brush on/off for example, others momentary like motor control
 	}
 
 	if (gotData)
 	{
-		String returnVal = "Left: " + String(leftMotor) +
-			", Right: " + String(rightMotor) +
-			", Sweeper: " + String(sweeper) +
-			", Blower: " + String(blower);
+		String returnVal = "Left: " + String(leftMotorSpeed) +
+			", Right: " + String(rightMotorSpeed) +
+			", Sweeper: " + String(sweeperSpeed) +
+			", Blower: " + String(blowerSpeed);
 
 		Serial.println(returnVal);
+
+		SetMotorValue(motorLeft, leftMotorSpeed);
+		SetMotorValue(motorRight, rightMotorSpeed);
+		
+		analogWrite(blowerPin, blowerSpeed);
+		analogWrite(sweeperPin, sweeperSpeed);
+
+		delay(1000);
 	}
+
+	motorLeft->run(RELEASE);
+	motorRight->run(RELEASE);
+
+	analogWrite(blowerPin, 0);
+	analogWrite(sweeperPin, 0);
 }
 
 int GetMotorValue() {
@@ -87,4 +115,19 @@ int GetMotorValue() {
 	//Serial.println("Retval: " + String(retval));
 
 	return retval;
+}
+
+void SetMotorValue(Adafruit_DCMotor* motor, int inputSpeed) {
+	uint8_t speed = inputSpeed >= 0 ? inputSpeed : inputSpeed * -1;
+	motor->setSpeed(speed);
+
+	//Serial.println(String(speed));
+
+	if (inputSpeed > 0) {
+		motor->run(FORWARD);
+	}
+	else
+	{
+		motor->run(BACKWARD);
+	}
 }

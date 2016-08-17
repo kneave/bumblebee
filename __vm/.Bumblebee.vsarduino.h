@@ -12,7 +12,6 @@
 #define _VSARDUINO_H_
 #define __AVR_ATmega32u4__
 #define __AVR_ATmega32U4__
-#define _VMDEBUG 1
 #define F_CPU 16000000L
 #define ARDUINO 10608
 #define ARDUINO_AVR_LEONARDO
@@ -66,5 +65,5 @@ extern "C" void __cxa_pure_virtual() {;}
 #define portOutputRegister(P)
 #define portInputRegister(P)
 #define portModeRegister(P)
-#include <..\Bumblebee\Bumblebee.ino>
+#include <Bumblebee.ino>
 #endif
