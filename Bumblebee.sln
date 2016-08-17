@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.25123.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Bumblebee", "Bumblebee.vcxproj", "{20883680-F027-42ED-A200-216772B5F926}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Bumblebee", "Arduino\Bumblebee.vcxproj", "{20883680-F027-42ED-A200-216772B5F926}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "console_app", "..\console_app\console_app.csproj", "{B418C9C9-4B8B-4CB7-830F-2CEA3CE121BC}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "console_app", "console_app\console_app.csproj", "{B418C9C9-4B8B-4CB7-830F-2CEA3CE121BC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
