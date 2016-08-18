@@ -151,41 +151,8 @@ namespace console_app
                 // what will be how fast we move, based on how far we are from the centre point.
                 double power = Math.Sqrt(clampedX * clampedX + clampedY * clampedY);
                 // figure out angle from y axis of x,y cord
-                double angle = 0D;
-                int xS = Math.Sign(clampedX);
-                int yS = Math.Sign(clampedY);
-                if (clampedX == 0 && yS > 0)
-                {
-                    angle = 0;
-                }
-                else if (clampedY == 0 && xS > 0)
-                {
-                    angle = (Math.PI / 2);
-                }
-                else if (clampedX == 0 && yS < 0)
-                {
-                    angle = Math.PI;
-                }
-                else if (clampedY == 0 && xS < 0)
-                {
-                    angle = (Math.PI + (Math.PI / 2));
-                }
-                else if (xS > 0 && yS > 0)
-                {
-                    angle = Math.Tan(clampedY / clampedX);
-                }
-                else if (xS < 0 && yS > 0)
-                {
-                    angle = (Math.PI / 2) + Math.Tan(clampedX / clampedY);
-                }
-                else if (xS < 0 && yS < 0)
-                {
-                    angle = Math.PI + Math.Tan(clampedX / clampedY);
-                }
-                else
-                {
-                    angle = (Math.PI + (Math.PI / 2)) + Math.Tan(clampedY / clampedX);
-                }
+                double angle = AngleFromYAxis(clampedX, clampedY);
+                
                 double offset = Math.PI - ((3 * Math.PI) / 4);  // the point the cos and sin curves cross over.
                 motorPowerLeft = Math.Sin(angle + offset) * power;
                 motorPowerRight = Math.Cos(angle + offset) * power;
@@ -206,6 +173,50 @@ namespace console_app
 
             
             return motorPower;
+        }
+        
+        /**
+         * Work out the angle of a point from the positive y axis. 
+         */
+        private static double AngleFromYAxis(double x, double y)
+        {
+            double angle = 0;
+
+            int xS = Math.Sign(x);
+            int yS = Math.Sign(y);
+            if (x == 0 && yS > 0)
+            {
+                angle = 0;
+            }
+            else if (y == 0 && xS > 0)
+            {
+                angle = (Math.PI / 2);
+            }
+            else if (x == 0 && yS < 0)
+            {
+                angle = Math.PI;
+            }
+            else if (y == 0 && xS < 0)
+            {
+                angle = (Math.PI + (Math.PI / 2));
+            }
+            else if (xS > 0 && yS > 0)
+            {
+                angle = Math.Tan(x / y);
+            }
+            else if (xS > 0 && yS < 0)
+            {
+                angle = (Math.PI / 2) + Math.Tan(x / y);
+            }
+            else if (xS < 0 && yS < 0)
+            {
+                angle = Math.PI + Math.Tan(x / y);
+            }
+            else
+            {
+                angle = -Math.Tan(x / y);
+            }
+            return angle;
         }
     }
 }
