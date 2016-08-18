@@ -40,6 +40,8 @@ void loop()
 	int leftMotorSpeed, rightMotorSpeed, sweeperSpeed, blowerSpeed;
 	leftMotorSpeed = rightMotorSpeed = sweeperSpeed = blowerSpeed = 0;
 	
+	int delayTime = 100;
+
 	// listen for commands on the serial port
 	bool gotData = false;
 
@@ -68,6 +70,9 @@ void loop()
 		case 'B':
 			blowerSpeed = GetMotorValue();
 			break;
+		case 'D':
+			delayTime = GetMotorValue();
+			break;
 		}
 	}
 
@@ -86,7 +91,7 @@ void loop()
 		analogWrite(blowerPin, blowerSpeed);
 		analogWrite(sweeperPin, sweeperSpeed);
 
-		delay(100);
+		delay(delayTime);
 	}
 
 	motorLeft->run(RELEASE);

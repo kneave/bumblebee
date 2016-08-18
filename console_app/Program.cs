@@ -52,8 +52,8 @@ namespace console_app
             {
                 _gameloop = new Timer();
                 _gameloop.Elapsed += Gameloop_Elapsed;
-                _gameloop.Interval = 100;
-                _gameloop.AutoReset = true;
+                _gameloop.Interval = 1;
+                _gameloop.AutoReset = false;
                 _gameloop.Start();
             }
             else
@@ -72,16 +72,26 @@ namespace console_app
 
             float leftMotorSpeed, rightMotorSpeed;
             string controlString;
-            //DPadControl(out leftMotorSpeed, out rightMotorSpeed);
-            LeftAnalogControl(out leftMotorSpeed, out rightMotorSpeed);
+
+            bool dPadUsed = _controllerState.Gamepad.Buttons == GamepadButtonFlags.DPadUp ||
+                _controllerState.Gamepad.Buttons == GamepadButtonFlags.DPadDown ||
+                _controllerState.Gamepad.Buttons == GamepadButtonFlags.DPadLeft ||
+                _controllerState.Gamepad.Buttons == GamepadButtonFlags.DPadRight;
+
+            if (dPadUsed)
+                DPadControl(out leftMotorSpeed, out rightMotorSpeed);
+            else
+                LeftAnalogControl(out leftMotorSpeed, out rightMotorSpeed);
 
             controlString = string.Format("L{0}{1:000}R{2}{3:000}W+{4}B+{4}",
                 leftMotorSpeed >= 0 ? "+" : string.Empty,
                 leftMotorSpeed,
                 rightMotorSpeed >= 0 ? "+" : string.Empty,
                 rightMotorSpeed,
-                cleaning ? "+255" : "000");
-            //Console.WriteLine(controlString);
+                cleaning ? "255" : "000");
+
+            Console.WriteLine(controlString);
+            //Console.WriteLine(_serialPort.ReadLine());
 
             if (leftMotorSpeed != 0 | rightMotorSpeed != 0)
             {
@@ -90,9 +100,10 @@ namespace console_app
                     _serialPort.WriteLine(controlString);
                 }
             }
+            _gameloop.Start();
         }
 
-        private static void DPadControl(out int leftMotorSpeed, out int rightMotorSpeed)
+        private static void DPadControl(out float leftMotorSpeed, out float rightMotorSpeed)
         {
             leftMotorSpeed = rightMotorSpeed = 0;
 
@@ -159,11 +170,11 @@ namespace console_app
 
             //Send those values to your Robot.
 
-            Console.WriteLine("I: {0},{1}; M: {2},{3}",
-                _controllerState.Gamepad.LeftThumbX,
-                _controllerState.Gamepad.LeftThumbY,
-                leftMotorSpeed,
-                rightMotorSpeed);
+            //Console.WriteLine("I: {0},{1}; M: {2},{3}",
+            //    _controllerState.Gamepad.LeftThumbX,
+            //    _controllerState.Gamepad.LeftThumbY,
+            //    leftMotorSpeed,
+            //    rightMotorSpeed);
         }
 
         private static void GetControllerInfoStrings()
