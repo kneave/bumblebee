@@ -24,19 +24,27 @@ namespace console_app
 
         static void Main(string[] args)
         {
-            //_serialPort = new SerialPort();
-            //_serialPort.PortName = Properties.Settings.Default.COMPort;
-            //_serialPort.BaudRate = 115200;
-            //_serialPort.Open();
+            _serialPort = new SerialPort();
+            _serialPort.PortName = Properties.Settings.Default.COMPort;
+            _serialPort.BaudRate = 115200;
 
-            //if (_serialPort.IsOpen)
-            //{
-            //    Console.WriteLine("Serial connected");
-            //}
-            //else
-            //{
-            //    Console.WriteLine("No serial connection");
-            //}
+            try
+            {
+                _serialPort.Open();
+            }
+            catch (Exception ex)
+	        {
+                Console.WriteLine(ex);    
+            }
+
+            if (_serialPort.IsOpen)
+            {
+                Console.WriteLine("Serial connected");
+            }
+            else
+            {
+                Console.WriteLine("No serial connection");
+            }
 
             _controller = new Controller(UserIndex.One);
             
@@ -62,22 +70,29 @@ namespace console_app
             GetControllerInfoStrings();
             //Console.WriteLine("{0}, {1}, {2}", _leftAxis, _rightAxis, _buttons);
 
-            //int leftMotorSpeed, rightMotorSpeed;
-            //string controlString;
-            //DPadControl(out leftMotorSpeed, out rightMotorSpeed, out controlString);
+            float leftMotorSpeed, rightMotorSpeed;
+            string controlString;
+            //DPadControl(out leftMotorSpeed, out rightMotorSpeed);
+            LeftAnalogControl(out leftMotorSpeed, out rightMotorSpeed);
 
-            LeftAnalogControl();
+            controlString = string.Format("L{0}{1:000}R{2}{3:000}W+{4}B+{4}",
+                leftMotorSpeed >= 0 ? "+" : string.Empty,
+                leftMotorSpeed,
+                rightMotorSpeed >= 0 ? "+" : string.Empty,
+                rightMotorSpeed,
+                cleaning ? "+255" : "000");
+            //Console.WriteLine(controlString);
 
-            //if (leftMotorSpeed != 0 | rightMotorSpeed != 0)
-            //{
-            //    if (_serialPort.IsOpen)
-            //    {
-            //        _serialPort.WriteLine(controlString);
-            //    }
-            //}
+            if (leftMotorSpeed != 0 | rightMotorSpeed != 0)
+            {
+                if (_serialPort.IsOpen)
+                {
+                    _serialPort.WriteLine(controlString);
+                }
+            }
         }
 
-        private static void DPadControl(out int leftMotorSpeed, out int rightMotorSpeed, out string controlString)
+        private static void DPadControl(out int leftMotorSpeed, out int rightMotorSpeed)
         {
             leftMotorSpeed = rightMotorSpeed = 0;
 
@@ -101,23 +116,54 @@ namespace console_app
                     cleaning = !cleaning;
                     break;
             }
-
-            controlString = string.Format("L{0}{1:000}R{2}{3:000}W{4}B{4}",
-                leftMotorSpeed >= 0 ? "+" : string.Empty,
-                leftMotorSpeed,
-                rightMotorSpeed >= 0 ? "+" : string.Empty,
-                rightMotorSpeed,
-                cleaning ? "+255" : "000");
-            Console.WriteLine(controlString);
         }
 
-        private static void LeftAnalogControl()
+        private static void LeftAnalogControl(out float leftMotorSpeed, out float rightMotorSpeed)
         {
-            int xValue = _controllerState.Gamepad.LeftThumbX;
-            int yValue = _controllerState.Gamepad.LeftThumbY;
-            Tuple<double, double> motorPower = MotorValues(xValue, yValue);
+            leftMotorSpeed = rightMotorSpeed = 0;
 
-            
+            int maxValue = 32768;
+
+            //Get X and Y from the Joystick, do whatever scaling and calibrating you need to do based on your hardware.            
+            int xInput = (_controllerState.Gamepad.LeftThumbX);
+            int yInput = (_controllerState.Gamepad.LeftThumbY);
+
+            //Invert X
+            int xValue = (Math.Abs(xInput) < 5000) ? 0 : -xInput;
+            int yValue = (Math.Abs(yInput) < 5000) ? 0 : yInput;
+                        
+            //Calculate R+L(Call it V): V = (100 - ABS(X)) * (Y / 100) + Y
+            int v = (maxValue - Math.Abs(xValue)) * (yValue / (maxValue*maxValue)) + yValue;
+
+            //Calculate R-L(Call it W): W = (100 - ABS(Y)) * (X / 100) + X
+            int w = (maxValue - Math.Abs(yValue)) * (xValue / (maxValue*maxValue)) + xValue;
+
+            //Calculate R: R = (V + W) / 2
+            rightMotorSpeed = ((v + w) / 2) / (float)(maxValue / 2);
+
+            //Calculate L: L = (V - W) / 2
+            leftMotorSpeed = ((v - w) / 2) / (float)(maxValue / 2);
+
+
+            ////Do any scaling on R and L your hardware may require.
+            rightMotorSpeed = Math.Abs(rightMotorSpeed) > 1
+                ? (rightMotorSpeed > 0 ? 1 : -1)
+                : rightMotorSpeed;
+
+            leftMotorSpeed = Math.Abs(leftMotorSpeed) > 1
+                ? (leftMotorSpeed > 0 ? 1 : -1)
+                : leftMotorSpeed;
+
+            rightMotorSpeed = 255 * rightMotorSpeed;
+            leftMotorSpeed = 255 * leftMotorSpeed;
+
+            //Send those values to your Robot.
+
+            Console.WriteLine("I: {0},{1}; M: {2},{3}",
+                _controllerState.Gamepad.LeftThumbX,
+                _controllerState.Gamepad.LeftThumbY,
+                leftMotorSpeed,
+                rightMotorSpeed);
         }
 
         private static void GetControllerInfoStrings()
@@ -130,23 +176,21 @@ namespace console_app
         }
 
         //  Thanks to Wil Sellwood for this code
-        public static Tuple<double, double> MotorValues(double x, double y)
+        public static Tuple<int, int> MotorValues(double x, double y)
         {
             double motorPowerLeft = 0.0;
             double motorPowerRight = 0.0;
 
-            int deadzoneX = 1500;
-            int deadzoneY = 1500;
+            int deadzoneX = 2500;
+            int deadzoneY = 2500;
 
-            bool xValid = x >= deadzoneX & x <= (deadzoneX * -1) ? true : false;
-            bool yValid = y >= deadzoneY & y <= (deadzoneY * -1) ? true : false;
+            double clampedX = Math.Round((((x + 32768) / (32768 * 2)) * 440) - 220);
+            double clampedY = Math.Round((((y + 32768) / (32768 * 2)) * 440) - 220);
 
-            double clampedX = (((x + 32768) / (32768 * 2)) * 20) - 10;
-            double clampedY = (((y + 32768) / (32768 * 2)) * 20) - 10;
-                
+            bool xValid = x >= -deadzoneX & x <= deadzoneX ? false : true;
+            bool yValid = y >= -deadzoneY & y <= deadzoneY ? false : true;
 
-            //if (xValid | yValid) // or dead zone values
-            if (true)
+            if (xValid || yValid) // or dead zone values
             {
                 // what will be how fast we move, based on how far we are from the centre point.
                 double power = Math.Sqrt(clampedX * clampedX + clampedY * clampedY);
@@ -157,21 +201,19 @@ namespace console_app
                 motorPowerLeft = Math.Sin(angle + offset) * power;
                 motorPowerRight = Math.Cos(angle + offset) * power;
 
-                Console.WriteLine("Controller: {0},{1}; clamped: {2},{3} angle {4} p{5} Power: {6},{7}",
-                x,
-                y,
-                clampedX,
-                clampedY,
-                (angle / Math.PI) * 180,
-                power,
-                motorPowerLeft,
-                motorPowerRight
-                );
+                //Console.WriteLine("Controller: {0},{1}; clamped: {2},{3} angle {4} p{5} Power: {6},{7}",
+                //    x,
+                //    y,
+                //    clampedX,
+                //    clampedY,
+                //    (angle / Math.PI) * 180,
+                //    power,
+                //    motorPowerLeft,
+                //    motorPowerRight);
             }
 
-            Tuple<double, double> motorPower = new Tuple<double, double>(motorPowerLeft, motorPowerRight);
-
-            
+            Tuple<int, int> motorPower = new Tuple<int, int>((int)motorPowerLeft, (int)motorPowerRight);
+                        
             return motorPower;
         }
         
