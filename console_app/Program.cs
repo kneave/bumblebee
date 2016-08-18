@@ -71,24 +71,37 @@ namespace console_app
             //Console.WriteLine("{0}, {1}, {2}", _leftAxis, _rightAxis, _buttons);
 
             float leftMotorSpeed, rightMotorSpeed;
+            int sweeperSpeed, blowerSpeed;
+            blowerSpeed = sweeperSpeed = (cleaning) ? 255 : 000;
+
             string controlString;
 
             bool dPadUsed = _controllerState.Gamepad.Buttons == GamepadButtonFlags.DPadUp ||
                 _controllerState.Gamepad.Buttons == GamepadButtonFlags.DPadDown ||
                 _controllerState.Gamepad.Buttons == GamepadButtonFlags.DPadLeft ||
-                _controllerState.Gamepad.Buttons == GamepadButtonFlags.DPadRight;
+                _controllerState.Gamepad.Buttons == GamepadButtonFlags.DPadRight ||
+                _controllerState.Gamepad.Buttons == GamepadButtonFlags.A;
 
             if (dPadUsed)
+            {
                 DPadControl(out leftMotorSpeed, out rightMotorSpeed);
+            }
             else
-                LeftAnalogControl(out leftMotorSpeed, out rightMotorSpeed);
+            {
+                LeftAnalogControl(
+                    out leftMotorSpeed, 
+                    out rightMotorSpeed,
+                    out sweeperSpeed,
+                    out blowerSpeed);
+            }
 
-            controlString = string.Format("L{0}{1:000}R{2}{3:000}W+{4}B+{4}",
+            controlString = string.Format("L{0}{1:000}R{2}{3:000}W+{4:000}B+{5:000}",
                 leftMotorSpeed >= 0 ? "+" : string.Empty,
                 leftMotorSpeed,
                 rightMotorSpeed >= 0 ? "+" : string.Empty,
                 rightMotorSpeed,
-                cleaning ? "255" : "000");
+                sweeperSpeed,
+                blowerSpeed);
 
             Console.WriteLine(controlString);
             //Console.WriteLine(_serialPort.ReadLine());
@@ -129,7 +142,11 @@ namespace console_app
             }
         }
 
-        private static void LeftAnalogControl(out float leftMotorSpeed, out float rightMotorSpeed)
+        private static void LeftAnalogControl(
+            out float leftMotorSpeed, 
+            out float rightMotorSpeed,
+            out int sweeperSpeed,
+            out int blowerSpeed)
         {
             leftMotorSpeed = rightMotorSpeed = 0;
 
@@ -168,7 +185,8 @@ namespace console_app
             rightMotorSpeed = 255 * rightMotorSpeed;
             leftMotorSpeed = 255 * leftMotorSpeed;
 
-            //Send those values to your Robot.
+            sweeperSpeed = _controllerState.Gamepad.LeftTrigger;
+            blowerSpeed = _controllerState.Gamepad.RightTrigger;
 
             //Console.WriteLine("I: {0},{1}; M: {2},{3}",
             //    _controllerState.Gamepad.LeftThumbX,
