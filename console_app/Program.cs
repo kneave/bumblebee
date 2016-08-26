@@ -63,6 +63,7 @@ namespace console_app
 
             Console.WriteLine("Press enter to quit...");
             Console.ReadLine();
+            _serialPort.Close();
         }
 
         private static void Gameloop_Elapsed(object sender, ElapsedEventArgs e)
