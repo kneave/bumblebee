@@ -29,9 +29,10 @@ void setup()
 	//  initialise things for the motor shield
 	//  do whatever else needs doing
 
-		Serial.println("Serial connected!");
 	}
 
+	Serial.println("Serial connected!");
+	
 	AFMS.begin();
 }
 
