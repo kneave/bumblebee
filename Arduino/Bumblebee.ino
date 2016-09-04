@@ -1,6 +1,5 @@
 #include <Wire.h>
 #include <Adafruit_MotorShield.h>
-#include "utility/Adafruit_MS_PWMServoDriver.h"
 
 Adafruit_MotorShield AFMS = Adafruit_MotorShield();
 
@@ -10,13 +9,11 @@ Adafruit_DCMotor *motorRight = AFMS.getMotor(2);
 int sweeperPin = 5;
 int blowerPin = 6;
 
-//  Note: Commented out as my motor controller is trashed
-//Adafruit_DCMotor *motorBrush = AFMS.getMotor(3);
-//Adafruit_DCMotor *motorSweeperBlower = AFMS.getMotor(4);
+int leftBumperPin = A0;
+int rightBumperPin = A1;
 
 void setup()
-{
-	
+{	
 	//  Need to setup serial
 	Serial.begin(115200);
 
@@ -41,7 +38,12 @@ void loop()
 	int leftMotorSpeed, rightMotorSpeed, sweeperSpeed, blowerSpeed;
 	leftMotorSpeed = rightMotorSpeed = sweeperSpeed = blowerSpeed = 0;
 	
-	int delayTime = 100;
+	int delayTime = 1;
+
+	int leftBumperVal = analogRead(leftBumperPin);
+	int rightBumperVal = analogRead(rightBumperPin);
+
+	Serial.println("L: " + String(leftBumperVal) + ", R: " + String(rightBumperVal));
 
 	// listen for commands on the serial port
 	bool gotData = false;
@@ -92,7 +94,7 @@ void loop()
 		analogWrite(blowerPin, blowerSpeed);
 		analogWrite(sweeperPin, sweeperSpeed);
 
-		delay(delayTime);
+		//delay(delayTime);
 	}
 
 	motorLeft->run(RELEASE);
