@@ -12,8 +12,9 @@
 #define _VSARDUINO_H_
 #define __AVR_ATmega32u4__
 #define __AVR_ATmega32U4__
+#define _VMDEBUG 1
 #define F_CPU 16000000L
-#define ARDUINO 10608
+#define ARDUINO 106011
 #define ARDUINO_AVR_LEONARDO
 #define ARDUINO_ARCH_AVR
 #define USB_VID 0x2341
@@ -42,7 +43,6 @@
 #endif
 #define NEW_H
 typedef void *__builtin_va_list;
-typedef unsigned char byte;
 extern "C" void __cxa_pure_virtual() {;}
 
 
@@ -52,18 +52,6 @@ extern "C" void __cxa_pure_virtual() {;}
 #undef F
 #define F(string_literal) ((const PROGMEM char *)(string_literal))
 #undef PSTR
-#define PSTR(string_literal) ((const PROGMEM char *)(string_literal))
-#undef cli
-#define cli()
-#define pgm_read_byte(address_short)
-#define pgm_read_word(address_short)
-#define pgm_read_word2(address_short)
-#define digitalPinToPort(P)
-#define digitalPinToBitMask(P) 
-#define digitalPinToTimer(P)
-#define analogInPinToBit(P)
-#define portOutputRegister(P)
-#define portInputRegister(P)
-#define portModeRegister(P)
-#include <Bumblebee.ino>
+#define PSTR(string_literal) ((const PROGMEM char *)(string_literal))")
+#include "Bumblebee.ino"
 #endif
