@@ -1,16 +1,20 @@
 #include <Wire.h>
 #include <Adafruit_MotorShield.h>
+#include <TimerOne.h>
 
 Adafruit_MotorShield AFMS = Adafruit_MotorShield();
 
 Adafruit_DCMotor *motorLeft = AFMS.getMotor(1);
 Adafruit_DCMotor *motorRight = AFMS.getMotor(2);
 
-int sweeperPin = 5;
-int blowerPin = 6;
+int blowerPin = 5;
+int sweeperPin = 6;
 
 int leftBumperPin = A0;
 int rightBumperPin = A1;
+
+volatile bool leftBumperHit = false;
+volatile bool rightBumperHit = false;
 
 void setup()
 {	
@@ -30,6 +34,9 @@ void setup()
 
 	Serial.println("Serial connected!");
 	
+	Timer1.initialize(50000);
+	Timer1.attachInterrupt(CheckSensors);
+
 	AFMS.begin();
 }
 
@@ -38,13 +45,8 @@ void loop()
 	int leftMotorSpeed, rightMotorSpeed, sweeperSpeed, blowerSpeed;
 	leftMotorSpeed = rightMotorSpeed = sweeperSpeed = blowerSpeed = 0;
 	
-	int delayTime = 1;
-
-	int leftBumperVal = analogRead(leftBumperPin);
-	int rightBumperVal = analogRead(rightBumperPin);
-
-	Serial.println("L: " + String(leftBumperVal) + ", R: " + String(rightBumperVal));
-
+	int delayTime = 50;
+	
 	// listen for commands on the serial port
 	bool gotData = false;
 
@@ -63,9 +65,19 @@ void loop()
 		{
 		case 'L':
 			leftMotorSpeed = GetMotorValue();
+
+			if (leftBumperHit && leftMotorSpeed > 0) {
+				leftMotorSpeed = 0;
+			}
+
 			break;
 		case 'R':
 			rightMotorSpeed = GetMotorValue();
+			
+			if (rightBumperHit && rightMotorSpeed > 0) {
+				rightMotorSpeed = 0;
+			}
+
 			break;
 		case 'W':
 			sweeperSpeed = GetMotorValue();
@@ -94,7 +106,7 @@ void loop()
 		analogWrite(blowerPin, blowerSpeed);
 		analogWrite(sweeperPin, sweeperSpeed);
 
-		//delay(delayTime);
+		delay(delayTime);
 	}
 
 	motorLeft->run(RELEASE);
@@ -137,5 +149,17 @@ void SetMotorValue(Adafruit_DCMotor* motor, int inputSpeed) {
 	else
 	{
 		motor->run(BACKWARD);
+	}
+}
+
+void CheckSensors() {
+	bool checkLeftBumperHit = analogRead(leftBumperPin) > 12;
+	bool checkRightBumperHit = analogRead(rightBumperPin) > 12;
+
+	if (checkLeftBumperHit != leftBumperHit | checkRightBumperHit != rightBumperHit) {
+		leftBumperHit = checkLeftBumperHit;
+		rightBumperHit = checkRightBumperHit;
+		
+		Serial.println("State change: L: " + String(leftBumperHit) + ", R: " + String(rightBumperHit));
 	}
 }
